@@ -20,39 +20,41 @@ class VMInfo:
     name: str
     state: VMState
     uuid: str
-    memory: int  # MB
+    memory: int  # In MB
     vcpus: int
 
 
 class LibvirtManager:
     """Manages libvirt connection and VM operations."""
 
+    __slots__ = ("_uri", "_conn")
+
     def __init__(self, uri: str = "qemu:///system") -> None:
-        self.uri: str = uri
-        self.conn: libvirt.virConnect | None = None
+        self._uri: str = uri
+        self._conn: libvirt.virConnect | None = None
 
     def connect(self) -> bool:
         """Establish connection to libvirt."""
         try:
-            self.conn = libvirt.open(self.uri)
-            return self.conn is not None
+            self._conn = libvirt.open(self._uri)
+            return self._conn is not None
         except libvirt.libvirtError:
             return False
 
     def disconnect(self) -> None:
         """Close libvirt connection."""
-        if self.conn:
-            self.conn.close()
-            self.conn = None
+        if self._conn:
+            self._conn.close()
+            self._conn = None
 
     def list_vms(self) -> list[VMInfo]:
         """Retrieve list of all virtual machines."""
-        if not self.conn:
+        if not self._conn:
             return []
 
         vms: list[VMInfo] = []
         try:
-            for domain in self.conn.listAllDomains():
+            for domain in self._conn.listAllDomains():
                 state_code: int = domain.state()[0]
                 state: VMState = self._get_vm_state(state_code)
 
@@ -72,10 +74,10 @@ class LibvirtManager:
 
     def start_vm(self, name: str) -> bool:
         """Start virtual machine."""
-        if not self.conn:
+        if not self._conn:
             return False
         try:
-            domain: libvirt.virDomain = self.conn.lookupByName(name)
+            domain: libvirt.virDomain = self._conn.lookupByName(name)
             domain.create()
             return True
         except libvirt.libvirtError:
@@ -83,10 +85,10 @@ class LibvirtManager:
 
     def shutdown_vm(self, name: str) -> bool:
         """Shutdown virtual machine."""
-        if not self.conn:
+        if not self._conn:
             return False
         try:
-            domain: libvirt.virDomain = self.conn.lookupByName(name)
+            domain: libvirt.virDomain = self._conn.lookupByName(name)
             domain.shutdown()
             return True
         except libvirt.libvirtError:
@@ -94,10 +96,10 @@ class LibvirtManager:
 
     def force_stop_vm(self, name: str) -> bool:
         """Force stop virtual machine."""
-        if not self.conn:
+        if not self._conn:
             return False
         try:
-            domain: libvirt.virDomain = self.conn.lookupByName(name)
+            domain: libvirt.virDomain = self._conn.lookupByName(name)
             domain.destroy()
             return True
         except libvirt.libvirtError:
@@ -105,10 +107,10 @@ class LibvirtManager:
 
     def delete_vm(self, name: str) -> bool:
         """Delete virtual machine."""
-        if not self.conn:
+        if not self._conn:
             return False
         try:
-            domain: libvirt.virDomain = self.conn.lookupByName(name)
+            domain: libvirt.virDomain = self._conn.lookupByName(name)
             domain.undefine()
             return True
         except libvirt.libvirtError:
@@ -123,12 +125,12 @@ class LibvirtManager:
         iso_path: str | None = None,
     ) -> bool:
         """Create new virtual machine."""
-        if not self.conn:
+        if not self._conn:
             return False
 
         xml: str = self._generate_vm_xml(name, memory, vcpus, disk_path, iso_path)
         try:
-            self.conn.defineXML(xml)
+            self._conn.defineXML(xml)
             return True
         except libvirt.libvirtError:
             return False

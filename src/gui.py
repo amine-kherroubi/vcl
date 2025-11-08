@@ -7,6 +7,8 @@ from src.control import LibvirtManager, VMInfo, VMState
 class VMListFrame(ctk.CTkScrollableFrame):
     """Frame displaying list of virtual machines."""
 
+    __slots__ = ("_manager", "_on_vm_select", "_vm_buttons")
+
     def __init__(
         self,
         master: Any,
@@ -14,27 +16,27 @@ class VMListFrame(ctk.CTkScrollableFrame):
         on_vm_select: Callable[[VMInfo], None],
     ) -> None:
         super().__init__(master)
-        self.manager: LibvirtManager = manager
-        self.on_vm_select: Callable[[VMInfo], None] = on_vm_select
-        self.vm_buttons: list[ctk.CTkButton] = []
+        self._manager: LibvirtManager = manager
+        self._on_vm_select: Callable[[VMInfo], None] = on_vm_select
+        self._vm_buttons: list[ctk.CTkButton] = []
 
     def refresh(self) -> None:
         """Refresh VM list display."""
-        for btn in self.vm_buttons:
+        for btn in self._vm_buttons:
             btn.destroy()
-        self.vm_buttons.clear()
+        self._vm_buttons.clear()
 
-        vms: list[VMInfo] = self.manager.list_vms()
+        vms: list[VMInfo] = self._manager.list_vms()
         for vm in vms:
             color: str = self._get_state_color(vm.state)
             btn = ctk.CTkButton(
                 self,
                 text=f"{vm.name} ({vm.state.value})",
                 fg_color=color,
-                command=lambda v=vm: self.on_vm_select(v),
+                command=lambda v=vm: self._on_vm_select(v),
             )
             btn.pack(pady=5, padx=10, fill="x")
-            self.vm_buttons.append(btn)
+            self._vm_buttons.append(btn)
 
     @staticmethod
     def _get_state_color(state: VMState) -> str:
@@ -55,9 +57,9 @@ class VMControlFrame(ctk.CTkFrame):
         self, master: Any, manager: LibvirtManager, on_action: Callable[[], None]
     ) -> None:
         super().__init__(master)
-        self.manager: LibvirtManager = manager
-        self.on_action: Callable[[], None] = on_action
-        self.selected_vm: VMInfo | None = None
+        self._manager: LibvirtManager = manager
+        self._on_action: Callable[[], None] = on_action
+        self._selected_vm: VMInfo | None = None
 
         self._create_widgets()
 
@@ -81,27 +83,27 @@ class VMControlFrame(ctk.CTkFrame):
 
     def set_selected_vm(self, vm: VMInfo) -> None:
         """Set currently selected VM."""
-        self.selected_vm = vm
+        self._selected_vm = vm
 
     def _start_vm(self) -> None:
-        if self.selected_vm:
-            self.manager.start_vm(self.selected_vm.name)
-            self.on_action()
+        if self._selected_vm:
+            self._manager.start_vm(self._selected_vm.name)
+            self._on_action()
 
     def _shutdown_vm(self) -> None:
-        if self.selected_vm:
-            self.manager.shutdown_vm(self.selected_vm.name)
-            self.on_action()
+        if self._selected_vm:
+            self._manager.shutdown_vm(self._selected_vm.name)
+            self._on_action()
 
     def _force_stop_vm(self) -> None:
-        if self.selected_vm:
-            self.manager.force_stop_vm(self.selected_vm.name)
-            self.on_action()
+        if self._selected_vm:
+            self._manager.force_stop_vm(self._selected_vm.name)
+            self._on_action()
 
     def _delete_vm(self) -> None:
-        if self.selected_vm:
-            self.manager.delete_vm(self.selected_vm.name)
-            self.on_action()
+        if self._selected_vm:
+            self._manager.delete_vm(self._selected_vm.name)
+            self._on_action()
 
 
 class CreateVMDialog(ctk.CTkToplevel):
@@ -111,8 +113,8 @@ class CreateVMDialog(ctk.CTkToplevel):
         self, master: Any, manager: LibvirtManager, on_create: Callable[[], None]
     ) -> None:
         super().__init__(master)
-        self.manager: LibvirtManager = manager
-        self.on_create: Callable[[], None] = on_create
+        self._manager: LibvirtManager = manager
+        self._on_create: Callable[[], None] = on_create
 
         self.title("Create Virtual Machine")
         self.geometry("400x400")
@@ -153,8 +155,8 @@ class CreateVMDialog(ctk.CTkToplevel):
         disk: str = self.disk_entry.get()
         iso: str | None = self.iso_entry.get() or None
 
-        if self.manager.create_vm(name, memory, vcpus, disk, iso):
-            self.on_create()
+        if self._manager.create_vm(name, memory, vcpus, disk, iso):
+            self._on_create()
             self.destroy()
 
 
