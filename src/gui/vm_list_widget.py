@@ -1,28 +1,41 @@
+"""Widget for displaying virtual machine list."""
+
+from __future__ import annotations
+from typing import TYPE_CHECKING
 import customtkinter as ctk
 from collections.abc import Callable
 from src.models import VMInfo, VMState
-from src.vm_service import VMService
+
+if TYPE_CHECKING:
+    from src.vm_service import VMService
 
 
 class VMListWidget(ctk.CTkScrollableFrame):
-    """Widget for displaying virtual machine list."""
+    """Modern widget for displaying virtual machine list."""
 
     __slots__ = ("_service", "_on_select", "_buttons")
 
     _STATE_COLORS: dict[VMState, str] = {
-        VMState.RUNNING: "green",
-        VMState.SHUTOFF: "gray",
-        VMState.PAUSED: "orange",
-        VMState.UNKNOWN: "red",
+        VMState.RUNNING: "#10b981",
+        VMState.SHUTOFF: "#6b7280",
+        VMState.PAUSED: "#f59e0b",
+        VMState.UNKNOWN: "#ef4444",
+    }
+
+    _HOVER_COLORS: dict[str, str] = {
+        "#10b981": "#34d399",
+        "#6b7280": "#9ca3af",
+        "#f59e0b": "#fbbf24",
+        "#ef4444": "#f87171",
     }
 
     def __init__(
         self,
-        master: ctk.CTkBaseClass,
+        master: ctk.CTkFrame | ctk.CTk,
         service: VMService,
         on_select: Callable[[VMInfo], None],
     ) -> None:
-        super().__init__(master)
+        super().__init__(master, fg_color="transparent")
         self._service: VMService = service
         self._on_select: Callable[[VMInfo], None] = on_select
         self._buttons: list[ctk.CTkButton] = []
@@ -32,8 +45,11 @@ class VMListWidget(ctk.CTkScrollableFrame):
         self._clear_buttons()
         vms = self._service.list_vms()
 
-        for vm in vms:
-            self._create_vm_button(vm)
+        if not vms:
+            self._show_empty_state()
+        else:
+            for vm in vms:
+                self._create_vm_button(vm)
 
     def _clear_buttons(self) -> None:
         """Clear all VM buttons."""
@@ -41,14 +57,36 @@ class VMListWidget(ctk.CTkScrollableFrame):
             btn.destroy()
         self._buttons.clear()
 
+    def _show_empty_state(self) -> None:
+        """Show empty state message."""
+        label = ctk.CTkLabel(
+            self,
+            text="No virtual machines found\nCreate one to get started",
+            font=("SF Pro Display", 14),
+            text_color="#9ca3af",
+        )
+        label.pack(pady=50)
+
     def _create_vm_button(self, vm: VMInfo) -> None:
-        """Create button for VM."""
-        color = self._STATE_COLORS.get(vm.state, "gray")
+        """Create modern button for VM."""
+        color = self._STATE_COLORS.get(vm.state, "#6b7280")
+        hover_color = self._HOVER_COLORS.get(color, color)
+
+        display_text = (
+            f"{vm.name}\n{vm.memory}MB · {vm.vcpus} vCPU · {vm.state.value.upper()}"
+        )
+
         btn = ctk.CTkButton(
             self,
-            text=f"{vm.name} ({vm.state.value})",
+            text=display_text,
+            font=("SF Pro Display", 14, "bold"),
             fg_color=color,
-            command=lambda: self._on_select(vm),
+            hover_color=hover_color,
+            height=50,
+            corner_radius=12,
+            anchor="w",
+            command=lambda v=vm: self._on_select(v),
         )
-        btn.pack(pady=5, padx=10, fill="x")
+
+        btn.pack(pady=8, padx=15, fill="x")
         self._buttons.append(btn)

@@ -1,3 +1,6 @@
+"""Main application window."""
+
+from __future__ import annotations
 import customtkinter as ctk
 from src.gui.create_vm_dialog import CreateVMDialog
 from src.gui.control_panel_widget import ControlPanelWidget
@@ -7,22 +10,29 @@ from src.vm_service import VMService
 
 
 class MainWindow(ctk.CTk):
-    """Main application window."""
+    """Modern main application window."""
 
     __slots__ = ("_service", "_vm_list", "_control_panel")
 
-    def __init__(self, service: VMService) -> None:
+    def __init__(
+        self, service: VMService, width: int = 1000, height: int = 700
+    ) -> None:
         super().__init__()
         self._service: VMService = service
 
-        self.title("Libvirt VM Manager")
-        self.geometry("800x600")
+        self.title("Libvirt Manager")
+        self.geometry(f"{width}x{height}")
+        self.configure(fg_color="#ffffff")
+
+        # Initialize widgets
+        self._vm_list: VMListWidget
+        self._control_panel: ControlPanelWidget
 
         self._build_ui()
         self._refresh_vm_list()
 
     def _build_ui(self) -> None:
-        """Build main window UI."""
+        """Build modern main window UI."""
         self._configure_grid()
         self._create_header()
         self._create_vm_list()
@@ -35,33 +45,63 @@ class MainWindow(ctk.CTk):
         self.grid_rowconfigure(1, weight=1)
 
     def _create_header(self) -> None:
-        """Create header with title and buttons."""
-        header = ctk.CTkFrame(self)
-        header.grid(row=0, column=0, columnspan=2, sticky="ew", padx=10, pady=10)
+        """Create modern header."""
+        header = ctk.CTkFrame(self, fg_color="#f9fafb", height=80, corner_radius=0)
+        header.grid(row=0, column=0, columnspan=2, sticky="ew", padx=0, pady=0)
+        header.grid_propagate(False)
 
+        # Title
         ctk.CTkLabel(
-            header, text="Virtual Machine Manager", font=("Arial", 20, "bold")
-        ).pack(side="left", padx=10)
+            header,
+            text="🖥️  Virtual Machines",
+            font=("SF Pro Display", 28, "bold"),
+            text_color="#111827",
+        ).pack(side="left", padx=30, pady=20)
 
-        ctk.CTkButton(header, text="Create VM", command=self._open_create_dialog).pack(
-            side="right", padx=10
-        )
+        # Buttons
+        button_frame = ctk.CTkFrame(header, fg_color="transparent")
+        button_frame.pack(side="right", padx=30)
 
-        ctk.CTkButton(header, text="Refresh", command=self._refresh_vm_list).pack(
-            side="right", padx=10
-        )
+        ctk.CTkButton(
+            button_frame,
+            text="+ Create VM",
+            font=("SF Pro Display", 13, "bold"),
+            fg_color="#3b82f6",
+            hover_color="#2563eb",
+            height=40,
+            corner_radius=10,
+            command=self._open_create_dialog,
+        ).pack(side="right", padx=5)
+
+        ctk.CTkButton(
+            button_frame,
+            text="↻ Refresh",
+            font=("SF Pro Display", 13),
+            fg_color="#e5e7eb",
+            hover_color="#d1d5db",
+            text_color="#374151",
+            height=40,
+            corner_radius=10,
+            command=self._refresh_vm_list,
+        ).pack(side="right", padx=5)
 
     def _create_vm_list(self) -> None:
         """Create VM list widget."""
-        self._vm_list = VMListWidget(self, self._service, self._on_vm_selected)
-        self._vm_list.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
+        container = ctk.CTkFrame(self, fg_color="#ffffff", corner_radius=0)
+        container.grid(row=1, column=0, sticky="nsew", padx=0, pady=0)
+
+        self._vm_list = VMListWidget(container, self._service, self._on_vm_selected)
+        self._vm_list.pack(fill="both", expand=True, padx=20, pady=20)
 
     def _create_control_panel(self) -> None:
         """Create control panel widget."""
+        container = ctk.CTkFrame(self, fg_color="#f9fafb", corner_radius=0)
+        container.grid(row=1, column=1, sticky="nsew", padx=0, pady=0)
+
         self._control_panel = ControlPanelWidget(
-            self, self._service, self._refresh_vm_list
+            container, self._service, self._refresh_vm_list
         )
-        self._control_panel.grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
+        self._control_panel.pack(fill="both", expand=True, padx=20, pady=20)
 
     def _refresh_vm_list(self) -> None:
         """Refresh VM list."""
@@ -73,4 +113,5 @@ class MainWindow(ctk.CTk):
 
     def _open_create_dialog(self) -> None:
         """Open VM creation dialog."""
-        CreateVMDialog(self, self._service, self._refresh_vm_list)
+        dialog = CreateVMDialog(self, self._service, self._refresh_vm_list)
+        dialog.focus()
