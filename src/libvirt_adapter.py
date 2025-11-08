@@ -1,5 +1,3 @@
-"""Libvirt adapter for VM operations."""
-
 from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
@@ -9,8 +7,6 @@ from src.models import VMInfo, VMState
 
 
 class LibvirtAdapter:
-    """Adapter for libvirt operations."""
-
     __slots__ = ("_uri", "_conn", "_logger")
 
     def __init__(self, uri: str = "qemu:///system") -> None:
@@ -19,7 +15,6 @@ class LibvirtAdapter:
         self._logger: logging.Logger = logging.getLogger("libvirt_manager.adapter")
 
     def connect(self) -> bool:
-        """Establish connection to libvirt."""
         try:
             self._logger.info("Connecting to libvirt: %s", self._uri)
             self._conn = libvirt.open(self._uri)
@@ -32,7 +27,6 @@ class LibvirtAdapter:
             return False
 
     def disconnect(self) -> None:
-        """Close libvirt connection."""
         if self._conn:
             self._logger.info("Disconnecting from libvirt")
             try:
@@ -43,7 +37,6 @@ class LibvirtAdapter:
                 self._conn = None
 
     def list_all_domains(self) -> list[VMInfo]:
-        """Retrieve all virtual machines."""
         if not self._conn:
             self._logger.warning("Attempted to list domains without connection")
             return []
@@ -61,7 +54,6 @@ class LibvirtAdapter:
         return vms
 
     def start_domain(self, name: str) -> bool:
-        """Start virtual machine."""
         self._logger.info("Starting VM: %s", name)
         result = self._execute_domain_action(name, lambda d: d.create())
         if result:
@@ -71,7 +63,6 @@ class LibvirtAdapter:
         return result
 
     def shutdown_domain(self, name: str) -> bool:
-        """Shutdown virtual machine gracefully."""
         self._logger.info("Shutting down VM: %s", name)
         result = self._execute_domain_action(name, lambda d: d.shutdown())
         if result:
@@ -81,7 +72,6 @@ class LibvirtAdapter:
         return result
 
     def destroy_domain(self, name: str) -> bool:
-        """Force stop virtual machine."""
         self._logger.warning("Force stopping VM: %s", name)
         result = self._execute_domain_action(name, lambda d: d.destroy())
         if result:
@@ -91,7 +81,6 @@ class LibvirtAdapter:
         return result
 
     def undefine_domain(self, name: str) -> bool:
-        """Delete virtual machine definition."""
         self._logger.warning("Deleting VM: %s", name)
         result = self._execute_domain_action(name, lambda d: d.undefine())
         if result:
@@ -101,7 +90,6 @@ class LibvirtAdapter:
         return result
 
     def define_domain(self, xml: str) -> bool:
-        """Define new virtual machine from XML."""
         if not self._conn:
             self._logger.warning("Attempted to define domain without connection")
             return False
@@ -115,7 +103,6 @@ class LibvirtAdapter:
             return False
 
     def _execute_domain_action(self, name: str, action: Callable[[Any], None]) -> bool:
-        """Execute action on domain by name."""
         if not self._conn:
             return False
         try:
@@ -127,7 +114,6 @@ class LibvirtAdapter:
             return False
 
     def _extract_vm_info(self, domain: Any) -> VMInfo:
-        """Extract VM information from domain."""
         state_code: int = domain.state()[0]
         state: VMState = self._map_state(state_code)
         info: tuple[int, int, int, int, int] = domain.info()
@@ -142,7 +128,6 @@ class LibvirtAdapter:
 
     @staticmethod
     def _map_state(state_code: int) -> VMState:
-        """Map libvirt state code to VMState."""
         state_map: dict[int, VMState] = {
             1: VMState.RUNNING,
             5: VMState.SHUTOFF,

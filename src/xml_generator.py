@@ -1,13 +1,10 @@
 class VMXMLGenerator:
-    """Generate libvirt XML configurations."""
-
     __slots__ = ()
 
     @staticmethod
     def generate_vm_xml(
         name: str, memory: int, vcpus: int, disk_path: str, iso_path: str | None = None
     ) -> str:
-        """Generate VM XML configuration."""
         cdrom_device = VMXMLGenerator._generate_cdrom(iso_path) if iso_path else ""
 
         return f"""<domain type='kvm'>
@@ -36,7 +33,6 @@ class VMXMLGenerator:
 
     @staticmethod
     def _generate_cdrom(iso_path: str) -> str:
-        """Generate CDROM device XML."""
         return f"""
     <disk type='file' device='cdrom'>
       <driver name='qemu' type='raw'/>

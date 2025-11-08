@@ -4,8 +4,6 @@ from enum import Enum
 
 
 class VMState(Enum):
-    """Virtual machine state enumeration."""
-
     RUNNING = "running"
     SHUTOFF = "shutoff"
     PAUSED = "paused"
@@ -14,10 +12,8 @@ class VMState(Enum):
 
 @dataclass(frozen=True, slots=True)
 class VMInfo:
-    """Immutable virtual machine information container."""
-
     name: str
     state: VMState
     uuid: str
-    memory: int  # In MB
+    memory: int
     vcpus: int
