@@ -4,7 +4,7 @@
 KVM Virtual Machine Manager
 ---------------------------
 A terminal-based VM management tool using libvirt
-Compatible with: RHEL 7.2, Python 2.7
+Made for RHEL 7.2 using Python 2.7
 
 Contributors:
 - Kherroubi Mohamed El Amine
